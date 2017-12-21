@@ -1,0 +1,33 @@
+
+dependencies {
+    compile project(":projects:version")
+    compile project(":projects:list")
+
+    compile "commons-collections:commons-collections:3.1"
+    compile "commons-cli:commons-cli:1.0"
+}
+
+task findDepdendencyRetrieval {
+    project.getConfigurations().getByName("compile").dependencies.forEach { Dependency dependency ->
+        println(dependency.getGroup()+":"+dependency.getName()+":"+dependency.getVersion())
+
+    }
+}
+
+task findGraphDepdendencyRetrieval {
+    def graphBuildDir = "build/dependenciesGraph"
+    def dotFile = file "$graphBuildDir/graph.dot"
+    delete graphBuildDir
+    mkdir graphBuildDir
+    dotFile << "digraph dependencies {"
+    project.getConfigurations().getByName("compile").dependencies
+            .forEach { Dependency dependency ->
+                def dependencyName = dependency.name.replace("-", "_")
+                dotFile << "  $project.name -> $dependencyName " }
+    dotFile << "}\n"
+}
+
+task findDependenciesGraph(dependsOn: "findGraphDepdendencyRetrieval", type: Exec) {
+    workingDir "$project.buildDir/dependenciesGraph"
+    commandLine "dot", "-O", "-Tpng", "graph.dot"
+}
